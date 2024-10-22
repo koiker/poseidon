@@ -1,0 +1,83 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VS Code settings
+.vscode/
+
+# Docker files
+docker-compose.yml
+Dockerfile
+
+# Data files
+data/
+logs/
+*.h5
+*.csv
+*.json
+*.xml
+
+# Model checkpoints and training logs
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+
+# TensorBoard and WandB logs
+logs/
+runs/
+wandb/
+
+# PyTest cache
+.pytest_cache/
+
+# Jupyter Notebook output
+*.ipynb
+
+# Operating system files
+.DS_Store  # macOS
+Thumbs.db  # Windows
+
+# Caches
+*.pkl
+*.pickle
+
+# Experiments
+results/
+
+# Data
+data/
+
+#mmpose
+mmpose/
+
+# config files
+configs/
+
+# out files
+*.out
+*.txt
+
+# ghost file
+ghost.py
+train_pretrained.py
+process_kill.py
+
+#notebook folder
+notebook/
