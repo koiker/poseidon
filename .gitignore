@@ -81,3 +81,5 @@ process_kill.py
 
 #notebook folder
 notebook/
+
+models/models_tmp/
