@@ -1,19 +1,21 @@
 import os
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
 import sys
 import torch
 import random
 import numpy as np
 import yaml
 from torch.utils.data import DataLoader
-from models.backbones import Backbones
 from datasets.transforms.build import reverse_transforms
-from models.PoseidonHeatMapVitPoseAttention12_vith_dropout_best import Poseidon
-from models.SimpleBaseline import SimpleBaseline
+from models.best.PoseidonHeatMapVitPoseAttention12_vith_dropout_best import Poseidon
 from datasets.zoo.posetrack.PoseTrack import PoseTrack
 from posetimation import get_cfg, update_config
+from engine.defaults import default_parse_args
 from core.loss import get_loss_function
 from core.function import validate
 from utils.utils_save_results import save_results
+from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 import wandb
 
 sys.path.insert(0, os.path.abspath('/home/pace/Poseidon/'))
@@ -69,14 +71,25 @@ def main():
     # Load the model
     if cfg.MODEL.METHOD == 'poseidon':
         model = Poseidon(cfg, phase=VAL_PHASE, device=device).to(device)
-    elif cfg.MODEL.METHOD == 'simplebaseline':
-        model = SimpleBaseline(cfg, phase=VAL_PHASE, device=device).to(device)
+
+    model_weights_path = args.weights_path
+    #model_weights_path = "/home/pace/Poseidon/results/best_results/2024-10-18_2_vitS/best_model.pt"
+    #model_weights_path = "/home/pace/Poseidon/results/best_results/2024-10-17_1_VitH/best_model.pt"
+
+    # Assuming model_weights_path is a string that contains the path to the checkpoint file
+    # Load the checkpoint onto the CPU and then move it to the GPU
+    checkpoint = torch.load(model_weights_path, map_location='cpu')
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.to(device)
 
     # Define loss function (criterion)
     loss = get_loss_function(cfg, device)
 
     # Load the validation dataset
     val_dataset = PoseTrack(cfg, phase=VAL_PHASE)
+
+    # check if the datasets are loaded successfully
+    print("\033[92m" + "Datasets loaded successfully." + "\033[0m")
 
     # Create the validation DataLoader
     val_loader = DataLoader(
@@ -90,16 +103,11 @@ def main():
     print("\033[92m" + "Val loader loaded successfully." + "\033[0m")
     print("Number of elements in the val set: ", len(val_dataset))
 
-    # Load model from checkpoint if resuming
-    if cfg.TRAIN.AUTO_RESUME:
-        checkpoint_path = cfg.TRAIN.AUTO_RESUME_PATH
-        model, _, _ = load_checkpoint(model, None, checkpoint_path)
-
     # Start the validation process
     print("\033[92m" + "Starting validation..." + "\033[0m")
 
     performance_values, perf_indicator, val_loss, val_acc = validate(
-        cfg, val_loader, val_dataset, model, loss, cfg.OUTPUT_DIR, device=device
+        cfg, val_loader, val_dataset, model, loss, cfg.OUTPUT_DIR, 999, device=device
     )
 
     # Log validation results if needed

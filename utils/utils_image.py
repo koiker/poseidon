@@ -24,9 +24,13 @@ def read_image_turbojpeg(image_path):
 #     with ThreadPoolExecutor() as executor:
 #         return list(executor.map(read_image_pil, image_files))
 
-def read_images_parallel(image_files):
-    with ThreadPoolExecutor() as executor:
-        return list(executor.map(read_image_turbojpeg, image_files))
+def read_images_parallel(image_files, format='jpg'):
+    if format == 'jpg':
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(read_image_turbojpeg, image_files))
+    else:
+        with ThreadPoolExecutor() as executor:
+            return list(executor.map(read_image_pil, image_files))
 
 def read_image(image_path):
     if not osp.exists(image_path):

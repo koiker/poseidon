@@ -62,13 +62,20 @@ Thumbs.db  # Windows
 results/
 
 # Data
+dataJHMDB/
+dataPosetrack18/
+dataPosetrack21/
 data/
+
+#config
+configs/bestJHMDB/
+configs/bestposetrack18/
+configs/bestposetrack21/
+
 
 #mmpose
 mmpose/
 
-# config files
-configs/
 
 # out files
 *.out
@@ -78,8 +85,11 @@ configs/
 ghost.py
 train_pretrained.py
 process_kill.py
+val_att_weights.py
+main.py
 
 #notebook folder
 notebook/
 
+HiEveDataset/
 models/models_tmp/

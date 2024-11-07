@@ -36,7 +36,7 @@ def dist_acc(dists, thr=0.5, percentage=True):
             return -1, -1
 
 
-def pck_accuracy(output, target, box_xywh, hm_type="gaussian", thr=0.5, ):
+def pck_accuracy(output, target, box_xywh, hm_type="gaussian", thr=0.05, ):
     '''
         In order to evaluate the effect of the model on PennAction.
 

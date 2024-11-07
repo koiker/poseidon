@@ -6,7 +6,6 @@ os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
 import atexit
 import torch
 import torch.nn as nn
-from models.backbones import Backbones
 from torchvision.utils import save_image
 from torchvision.transforms import ToPILImage
 import torch.profiler
@@ -17,11 +16,10 @@ import yaml
 import matplotlib.pyplot as plt
 import sys
 
-sys.path.insert(0, os.path.abspath('/home/pace/Poseidon/'))
+sys.path.insert(0, os.path.abspath('../'))
 
 from datasets.transforms.build import reverse_transforms
-from models.best.PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive import Poseidon
-from models.SimpleBaseline import SimpleBaseline
+from models.best.Vitpose import Poseidon
 from datasets.zoo.posetrack.PoseTrack import PoseTrack 
 from posetimation import get_cfg, update_config 
 from engine.defaults import default_parse_args
@@ -92,8 +90,6 @@ def main():
      # load the model
     if cfg.MODEL.METHOD == 'poseidon':
         model = Poseidon(cfg, phase=phase, device=device).to(device)
-    elif cfg.MODEL.METHOD == 'simplebaseline':
-        model = SimpleBaseline(cfg, phase=phase, device=device).to(device)
 
     # define loss function (criterion) and optimizer
     loss = get_loss_function(cfg, device)
@@ -238,8 +234,12 @@ def main():
                 "learning_rate": optimizer.param_groups[0]['lr']  # Log the current learning rate
             })
 
+            # Step the scheduler if applicable
+            if cfg.TRAIN.LR_SCHEDULER == 'StepLR' or cfg.TRAIN.LR_SCHEDULER == 'CosineAnnealingLR':
+                save_model(model, optimizer, epoch, experiment_dir, scheduler, is_best=(perf_indicator > best_perf))
             # Save the last model and the best model if applicable
-            save_model(model, optimizer, epoch, experiment_dir, is_best=(perf_indicator > best_perf))
+            else:
+                save_model(model, optimizer, epoch, experiment_dir,None,  is_best=(perf_indicator > best_perf))
 
         # Save the model if it has the best performance
         if perf_indicator > best_perf:

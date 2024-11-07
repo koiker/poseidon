@@ -65,12 +65,14 @@ class PoseTrack(VideoDataset):
 
         self.train = True if phase == TRAIN_PHASE else False
         self.flip_pairs = [[3, 4], [5, 6], [7, 8], [9, 10], [11, 12], [13, 14], [15, 16]]
-        self.joints_weight = np.array([1., 1., 1., 1., 1., 1., 1., 1.2, 1.2, 1.5, 1.5, 1., 1., 1.2, 1.2, 1.5, 1.5], dtype=np.float32).reshape((self.num_joints, 1))
+
+        self.joints_weight = np.array([1., 1., 1., 1., 1., 1., 1., 1.2, 1.2, 1.5, 1.5, 1., 1., 1.2, 1.2, 1.5, 1.5], dtype=np.float32).reshape((self.num_joints, 1)) 
         self.joints_with_center_weight = np.array([1., 1., 1., 1., 1., 1., 1., 1.2, 1.2, 1.5, 1.5, 1., 1., 1.2, 1.2, 1.5, 1.5, 1.5],
-                                      dtype=np.float32).reshape((self.num_joints + 1, 1))
+                                    dtype=np.float32).reshape((self.num_joints + 1, 1))
+
+        self.dataset_name = cfg.DATASET.NAME
         self.upper_body_ids = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
         self.lower_body_ids = (11, 12, 13, 14, 15, 16)
-
         self.is_posetrack18 = cfg.DATASET.IS_POSETRACK18
         self.transform = build_transforms(cfg, phase)
 
@@ -89,6 +91,8 @@ class PoseTrack(VideoDataset):
         self.json_dir = cfg.DATASET.JSON_DIR
         self.test_on_train = cfg.DATASET.TEST_ON_TRAIN
         self.json_file = cfg.DATASET.JSON_FILE
+
+        self.image_format = cfg.IMAGE_FORMAT
 
         if self.phase != TRAIN_PHASE:
             self.img_dir = cfg.DATASET.TEST_IMG_DIR
@@ -314,7 +318,7 @@ class PoseTrack(VideoDataset):
         score = data_item['score'] if 'score' in data_item else 1
         r = 0
 
-        if self.is_train:
+        if False: #if self.is_train:
             if (np.sum(joints_vis[:, 0]) > self.num_joints_half_body and np.random.rand() < self.prob_half_body):
                 c_half_body, s_half_body = half_body_transform(joints, joints_vis, self.num_joints, self.upper_body_ids, self.aspect_ratio,
                                                                self.pixel_std)
@@ -599,8 +603,12 @@ class PoseTrack(VideoDataset):
         image_file_path = data_item['image']
         num_frames = data_item['nframes']
 
-        zero_fill = len(osp.basename(image_file_path).replace('.jpg', ''))
-        current_idx = int(osp.basename(image_file_path).replace('.jpg', ''))
+        if self.image_format  == 'jpg':
+            zero_fill = len(osp.basename(image_file_path).replace('.jpg', ''))
+            current_idx = int(osp.basename(image_file_path).replace('.jpg', ''))
+        elif self.image_format  == 'png':
+            zero_fill = len(osp.basename(image_file_path).replace('.png', ''))
+            current_idx = int(osp.basename(image_file_path).replace('.png', ''))
 
         # Calculate indices for the temporal window
         half_window = self.window_size // 2
@@ -611,25 +619,50 @@ class PoseTrack(VideoDataset):
 
             # Generate list of image files for the temporal window
             image_files = [
-                osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.jpg")
+                osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.{self.image_format}")
                 for i in range(start_idx, end_idx + 1)
             ]
+
+            if self.dataset_name == 'jhmdb':
+                image_files = []
+                for i in range(start_idx, end_idx + 1):
+                    if i < 1:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(1).zfill(zero_fill)}.{self.image_format}"))
+                    elif i >= num_frames:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(num_frames-1).zfill(zero_fill)}.{self.image_format}"))
+                    else:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.{self.image_format}"))
+
         else:
             start_idx = current_idx - half_window
             end_idx = current_idx + half_window
 
-            image_files = []
-            for i in range(start_idx, end_idx + 1):
-                if i < 0:
-                    image_files.append(osp.join(osp.dirname(image_file_path), f"{str(0).zfill(zero_fill)}.jpg"))
-                elif i >= num_frames:
-                    image_files.append(osp.join(osp.dirname(image_file_path), f"{str(num_frames-1).zfill(zero_fill)}.jpg"))
-                else:
-                    image_files.append(osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.jpg"))
+            if self.dataset_name == 'jhmdb':
+                image_files = []
+                for i in range(start_idx, end_idx + 1):
+                    if i < 1:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(1).zfill(zero_fill)}.{self.image_format}"))
+                    elif i >= num_frames:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(num_frames-1).zfill(zero_fill)}.{self.image_format}"))
+                    else:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.{self.image_format}"))
+            else:
 
+                image_files = []
+                for i in range(start_idx, end_idx + 1):
+                    if i < 0:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(0).zfill(zero_fill)}.{self.image_format}"))
+                    elif i >= num_frames:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(num_frames-1).zfill(zero_fill)}.{self.image_format}"))
+                    else:
+                        image_files.append(osp.join(osp.dirname(image_file_path), f"{str(i).zfill(zero_fill)}.{self.image_format}"))
 
-        # Read images in parallel
-        data_numpy_list = read_images_parallel(image_files)
+        if self.image_format == 'jpg':
+            # Read images in parallel
+            data_numpy_list = read_images_parallel(image_files)
+
+        elif self.image_format == 'png':
+            data_numpy_list = read_images_parallel(image_files, format='png')
 
         # Check if any image failed to load
         if any(img is None for img in data_numpy_list):
@@ -890,7 +923,7 @@ class PoseTrack(VideoDataset):
         logger = logging.getLogger(__name__)
         logger.info("=> Start evaluate")
         if self.phase == 'validate':
-            output_dir = osp.join(output_dir, 'val_set_json_results')
+            output_dir = osp.join(output_dir, 'val_set_json_results_jhmdb')
         else:
             output_dir = osp.join(output_dir, 'test_set_json_results')
 
@@ -915,7 +948,7 @@ class PoseTrack(VideoDataset):
             img_sfx = temp[len(temp) - 3] + '/' + temp[len(temp) - 2] + '/' + temp[len(temp) - 1]
 
             prev_nm = temp[len(temp) - 1]
-            frame_num = int(prev_nm.replace('.jpg', ''))
+            frame_num = int(prev_nm.replace(str('.' + self.image_format), ''))
             if not video_name in video_map:
                 video_map[video_name] = [cc]
                 vid2frame_map[video_name] = [frame_num]
@@ -952,9 +985,14 @@ class PoseTrack(VideoDataset):
 
         for vid in video_map:
             idx_list = video_map[vid]
+            
             c = 0
             used_frame_list = []
-            cur_length = L['images/' + vid]
+
+            if self.dataset_name == 'PoseTrack':
+                cur_length = L['images/' + vid]
+            elif self.dataset_name == 'jhmdb':
+                cur_length = L['Rename_Images/' + vid]
 
             temp_kps_map = {}
             temp_track_kps_map = {}
@@ -1008,7 +1046,7 @@ class PoseTrack(VideoDataset):
                 data_el = {
                     'image': {'name': img_sfx},
                     'imgnum': [frame_num],
-                    'annorect': convert_data_to_annorect_struct(kps, tracks, bboxs),
+                    'annorect': convert_data_to_annorect_struct(kps, tracks, bboxs, self.dataset_name),
                 }
                 if vid in out_data:
                     out_data[vid].append(data_el)
@@ -1019,25 +1057,33 @@ class PoseTrack(VideoDataset):
         #### saving files for evaluation
         for vname in out_data:
             vdata = out_data[vname]
-            outfpath = osp.join(output_dir, out_filenames[osp.join('images', vname)])
+
+            if self.dataset_name == "PoseTrack":
+                outfpath = osp.join(output_dir, out_filenames[osp.join('images', vname)])
+            elif self.dataset_name == "jhmdb":
+                outfpath = osp.join(output_dir, out_filenames[osp.join('Rename_Images', vname)])
 
             write_json_to_file({'annolist': vdata}, outfpath)
 
         # run evaluation
         # AP = self._run_eval(annot_dir, output_dir)[0]
-        AP = evaluate_simple.evaluate(annot_dir, output_dir, eval_track=False)[0]
+        AP = evaluate_simple.evaluate(annot_dir, output_dir, eval_track=False, dataset_name=self.dataset_name)[0]
+        
+        if self.dataset_name == "posetrack":
+            name_value = [
+                ('Head', AP[0]),
+                ('Shoulder', AP[1]),
+                ('Elbow', AP[2]),
+                ('Wrist', AP[3]),
+                ('Hip', AP[4]),
+                ('Knee', AP[5]),
+                ('Ankle', AP[6]),
+                ('Mean', AP[7])
+            ]
 
-        name_value = [
-            ('Head', AP[0]),
-            ('Shoulder', AP[1]),
-            ('Elbow', AP[2]),
-            ('Wrist', AP[3]),
-            ('Hip', AP[4]),
-            ('Knee', AP[5]),
-            ('Ankle', AP[6]),
-            ('Mean', AP[7])
-        ]
+            name_value = OrderedDict(name_value)
 
-        name_value = OrderedDict(name_value)
+            return name_value, name_value['Mean']
 
-        return name_value, name_value['Mean']
+        else:
+            return AP, AP["Mean"]

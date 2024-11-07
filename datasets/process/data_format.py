@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding:utf8 -*-
 
-from .keypoints_ord import coco2posetrack_ord
+from .keypoints_ord import coco2posetrack_ord, coco2jhmdb
 
 
-def convert_data_to_annorect_struct(poses, tracks, boxes, **kwargs):
+def convert_data_to_annorect_struct(poses, tracks, boxes, dataset_name, **kwargs):
     """
             Args:
                 boxes (np.ndarray): Nx5 size matrix with boxes on this frame
@@ -21,7 +21,11 @@ def convert_data_to_annorect_struct(poses, tracks, boxes, **kwargs):
         if eval_tracking and score > tracking_threshold:
             continue
 
-        point = coco2posetrack_ord(poses[j], global_score=score)  # here poses 是 4*17
+        if dataset_name == "posetrack":
+            point = coco2posetrack_ord(poses[j], global_score=score)  # here poses 是 4*17
+        else:
+            point = coco2jhmdb(poses[j]) 
+        
         annorect.append({'annopoints': [{'point': point}],
                          'score': [float(score)],
                          'track_id': [tracks[j]]})

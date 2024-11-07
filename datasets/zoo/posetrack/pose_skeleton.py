@@ -79,6 +79,46 @@ PoseTrack_COCO_Keypoint_Ordering = [
     #14 'right_ankle',
 ]
 
+COCO_Keypoint_Ordering = [
+    'nose',  # 0
+    'left_eye',  # 1
+    'right_eye',  # 2
+    'left_ear',  # 3
+    'right_ear',  # 4
+    'left_shoulder',  # 5
+    'right_shoulder',  # 6
+    'left_elbow',  # 7
+    'right_elbow',  # 8
+    'left_wrist',  # 9
+    'right_wrist',  # 10
+    'left_hip',  # 11
+    'right_hip',  # 12
+    'left_knee',  # 13
+    'right_knee',  # 14
+    'left_ankle',  # 15
+    'right_ankle'  # 16
+]
+
+JHMDB_Keypoint_Ordering = [
+    'neck',  # 0
+    'belly',  # 1 (midpoint between left_hip and right_hip)
+    'head',  # 2 (can be computed as midpoint between nose and neck)
+    'left_ear',  # 3
+    'right_ear',  # 4
+    'right_shoulder',  # 5
+    'left_shoulder',  # 6
+    'right_hip',  # 7
+    'left_hip',  # 8
+    'right_elbow',  # 9
+    'left_elbow',  # 10
+    'right_knee',  # 11
+    'left_knee',  # 12
+    'right_wrist',  # 13
+    'left_wrist',  # 14
+    'right_ankle',  # 15
+    'left_ankle'  # 16
+]
+
 PoseTrack_Keypoint_Name_Colors = [['right_ankle', 'Gold'],
                                   ['right_knee', 'Orange'],
                                   ['right_hip', 'DarkOrange'],

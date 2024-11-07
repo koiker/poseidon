@@ -1,11 +1,5 @@
 import os
 import sys
-
-os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-sys.path.insert(0, os.path.abspath('/home/pace/Poseidon/'))
-
-import os
-import sys
 import torch
 import torch.nn as nn
 import numpy as np
@@ -19,23 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 import torch.nn.functional as F
 from mmpose.apis import init_model
-from engine.defaults import default_parse_args
-from torchvision.models._utils import IntermediateLayerGetter
-import math
+
+
 from posetimation import get_cfg, update_config 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-from deformable_attention_2d import DeformableAttention2D
-
-from torchvision.ops import DeformConv2d
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 
 class AdaptiveFrameWeighting(nn.Module):
     def __init__(self, embed_dim, num_frames):
@@ -190,77 +170,36 @@ class Poseidon(nn.Module):
         
         return x
 
+    def set_phase(self, phase):
+        self.phase = phase
+        self.is_train = True if phase == TRAIN_PHASE else False
 
-def setup(args):
-    cfg = get_cfg(args)
-    update_config(cfg, args)
+    def get_phase(self):
+        return self.phase
 
-    return cfg
+    def get_accuracy(self, output, target, target_weight):
+        """Calculate accuracy for top-down keypoint loss.
 
-def find_max_batch_size(model, max_batch_size=32):
-    device = next(model.parameters()).device
-    left, right = 1, max_batch_size
-    
-    while left <= right:
-        mid = (left + right) // 2
-        try:
-            torch.cuda.empty_cache()
-            dummy_input = torch.randn(mid, 5, 3, 384, 288).to(device)
-            with torch.no_grad():
-                _ = model(dummy_input)
-            left = mid + 1
-        except RuntimeError as e:
-            if "out of memory" in str(e):
-                right = mid - 1
-            else:
-                raise e
-    
-    max_batch = right
-    print(f"Maximum batch size: {max_batch}")
-    
-    # Now test with the maximum batch size to get the memory usage
-    torch.cuda.reset_peak_memory_stats()
-    torch.cuda.empty_cache()
-    dummy_input = torch.randn(max_batch, 5, 3, 384, 288).to(device)
-    with torch.no_grad():
-        _ = model(dummy_input)
-    peak_memory = torch.cuda.max_memory_allocated() / 1024**2  # Convert to MB
-    print(f"Peak GPU memory usage with batch size {max_batch}: {peak_memory:.2f} MB")
+        Note:
+            batch_size: N
+            num_keypoints: K
 
-    return max_batch
+        Args:
+            output (torch.Tensor[N, K, 2]): Output keypoints.
+            target (torch.Tensor[N, K, 2]): Target keypoints.
+            target_weight (torch.Tensor[N, K, 2]):
+                Weights across different joint types.
+        """
+        N = output.shape[0]
 
-def test_model():
-    
-    args = default_parse_args()
-    cfg = setup(args)
+        _, avg_acc, cnt = keypoint_pck_accuracy(
+            output.detach().cpu().numpy(),
+            target.detach().cpu().numpy(),
+            target_weight[:, :, 0].detach().cpu().numpy() > 0,
+            thr=0.05,
+            norm_factor=np.ones((N, 2), dtype=np.float32))
 
-    #config_path = '/home/pace/Poseidon/configs/configDCPose.yaml'
-    #cfg = load_config(config_path)
-    phase = 'train'
-    
-    device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
-
-    # Create the model
-    model = Poseidon(cfg=cfg).to(device)
-    
-    dummy_input = torch.randn(1, 5, 3, 384, 288).to(device)
-
-    # Run a forward pass
-    with torch.no_grad():
-        output = model(dummy_input)
-    
-    # Calculate the peak memory usage
-    peak_memory = torch.cuda.max_memory_allocated() / 1024**2  # Convert to MB
-    print(f"Peak GPU memory usage: {peak_memory:.2f} MB")
-    # gpu memory disponibile
-    print(f"Free Memory: {torch.cuda.get_device_properties(1).total_memory / 1024**2} MB")
-
-    # Find the maximum batch size
-    max_batch_size = find_max_batch_size(model, max_batch_size=128)
+        return avg_acc
 
 
-if __name__ == "__main__":
-    test_model()
 
-
-# python models/test_model5.py --config /home/pace/Poseidon/configs/configPoseidon.yaml

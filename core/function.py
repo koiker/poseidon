@@ -9,7 +9,7 @@ from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 from datasets.process.heatmaps_process import get_final_preds, get_final_preds_coor
 from utils.utils_save_results import save_batch_examples
 from utils.utils_requests import *
-from .evaludate import accuracy
+from .evaludate import accuracy, pck_accuracy
 
 def train_batch_accumulation(cfg, train_loader, model, criterion, optimizer, epoch, output_dir, device, experiment_dir, save_examples=False):
     batch_time = AverageMeter()
@@ -81,7 +81,9 @@ def train_batch_accumulation(cfg, train_loader, model, criterion, optimizer, epo
     # Print summary for the epoch
     print(f'Training Epoch {epoch} Summary:\t'
           f'Loss {losses.avg:.6f}\t'
-          f'Acc {acc.avg:.3f}')
+          f'Acc {acc.avg:.3f}\t')
+    
+
 
     total_time = time.time() - total_time
     print("\033[95m" + f"Total time: {total_time // 60:.0f} minutes and {total_time % 60:.2f} seconds" + "\033[0m\n")
@@ -146,7 +148,8 @@ def train(cfg, train_loader, model, criterion, optimizer, epoch, output_dir, dev
         if i % 100 == 0:
             tqdm_desc = f'Epoch {epoch} [Loss: {losses.avg:.6f}] [Acc: {acc.avg:.3f}] [Data: {data_time.avg:.3f}s] [Batch: {batch_time.avg:.3f}s]'
             pbar.set_description(tqdm_desc)
-    
+
+
     print(f'Training Epoch {epoch} Summary:\t'
           f'Loss {losses.avg:.6f}\t'
           f'Acc {acc.avg:.3f}')
@@ -234,6 +237,7 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir, epoc
                 tqdm_desc = f'Epoch {epoch} [Loss: {losses.avg:.6f}] [Acc: {acc.avg:.3f}]'
                 pbar.set_description(tqdm_desc)
 
+            
 
     name_values, perf_indicator = val_dataset.evaluate(config, all_preds, config.OUTPUT_DIR, all_boxes,
                                                        filenames_map, filenames, imgnums)
@@ -242,14 +246,14 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir, epoc
           f'Epoch {epoch}\t'
           f'Loss {losses.avg:.6f}\t'
           f'Acc {acc.avg:.3f}\t'
-          f'Ap Mean {perf_indicator:.3f}')
+          f'Ap Mean or PCK {perf_indicator:.3f}')
 
     total_time = time.time() - end
     # print total time in minutes and seconds in purple color
     print("\033[95m" + f"Total time: {total_time // 60:.0f} minutes and {total_time % 60:.2f} seconds" + "\033[0m\n")
 
     # every 5 epochs 
-    if epoch % 2 == 0:
+    if epoch % 5 == 0:
         send_validation_epoch_update(epoch, perf_indicator, losses.avg)
 
     return name_values, perf_indicator, losses.avg, acc.avg  # AP mean

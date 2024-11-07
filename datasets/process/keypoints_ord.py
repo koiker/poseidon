@@ -2,8 +2,87 @@
 # -*- coding:utf8 -*-
 
 import numpy as np
-from datasets.zoo.posetrack import PoseTrack_Official_Keypoint_Ordering, PoseTrack_COCO_Keypoint_Ordering
+from datasets.zoo.posetrack import PoseTrack_Official_Keypoint_Ordering, PoseTrack_COCO_Keypoint_Ordering, PoseTrack_Keypoint_Pairs, PoseTrack_Keypoint_Name_Colors
 
+
+def coco2jhmdb(pose, global_score=1):
+    """
+    Converts COCO keypoints to JHMDB keypoints.
+    
+    :param pose: Array of shape (3, 17) representing COCO keypoints [x, y, confidence].
+    :param global_score: Overall confidence score multiplier.
+    :return: Array of shape (17, 3) representing JHMDB keypoints [x, y, confidence].
+    """
+    data = []
+    global_score = float(global_score)
+
+    # JHMDB keypoints indices in relation to COCO
+    jhmdb_kps_map = {
+        3: 3,   # left_ear
+        4: 4,   # right_ear
+        5: 6,   # right_shoulder
+        6: 5,   # left_shoulder
+        7: 12,  # right_hip
+        8: 11,  # left_hip
+        9: 8,   # right_elbow
+        10: 7,  # left_elbow
+        11: 14, # right_knee
+        12: 13, # left_knee
+        13: 10, # right_wrist
+        14: 9,  # left_wrist
+        15: 16, # right_ankle
+        16: 15  # left_ankle
+    }
+
+    for k in range(17):
+        if k in jhmdb_kps_map:
+            ind = jhmdb_kps_map[k]
+            local_score = (pose[2, ind] + pose[2, ind]) / 2.0
+            conf = local_score * global_score
+
+            data.append({'id': [k],
+                         'x': [float(pose[0, ind])],
+                         'y': [float(pose[1, ind])],
+                         'score': [conf]})
+        elif k == 0:  # 'neck'
+            rsho = jhmdb_kps_map[5]  # right_shoulder (mapped to COCO index)
+            lsho = jhmdb_kps_map[6]  # left_shoulder (mapped to COCO index)
+            x_neck = (pose[0, rsho] + pose[0, lsho]) / 2.0
+            y_neck = (pose[1, rsho] + pose[1, lsho]) / 2.0
+            local_score = (pose[2, rsho] + pose[2, lsho]) / 2.0
+            conf_neck = local_score * global_score
+
+            data.append({'id': [k],
+                         'x': [float(x_neck)],
+                         'y': [float(y_neck)],
+                         'score': [conf_neck]})
+        elif k == 1:  # 'belly'
+            lhip = jhmdb_kps_map[8]  # left_hip (mapped to COCO index)
+            rhip = jhmdb_kps_map[7]  # right_hip (mapped to COCO index)
+            x_belly = (pose[0, lhip] + pose[0, rhip]) / 2.0
+            y_belly = (pose[1, lhip] + pose[1, rhip]) / 2.0
+            local_score = (pose[2, lhip] + pose[2, rhip]) / 2.0
+            conf_belly = local_score * global_score
+
+            data.append({'id': [k],
+                         'x': [float(x_belly)],
+                         'y': [float(y_belly)],
+                         'score': [conf_belly]})
+        elif k == 2:  # 'head'
+            nose = 0  # COCO nose index
+            neck_x = (pose[0, jhmdb_kps_map[5]] + pose[0, jhmdb_kps_map[6]]) / 2.0
+            neck_y = (pose[1, jhmdb_kps_map[5]] + pose[1, jhmdb_kps_map[6]]) / 2.0
+            x_head = (pose[0, nose] + neck_x) / 2.0
+            y_head = (pose[1, nose] + neck_y) / 2.0
+            local_score = (pose[2, nose] + (pose[2, jhmdb_kps_map[5]] + pose[2, jhmdb_kps_map[6]]) / 2.0) / 2.0
+            conf_head = local_score * global_score
+
+            data.append({'id': [k],
+                         'x': [float(x_head)],
+                         'y': [float(y_head)],
+                         'score': [conf_head]})
+
+    return data
 
 def coco2posetrack_ord(preds, global_score=1):
     # print(xy)

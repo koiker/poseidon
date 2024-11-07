@@ -5,7 +5,6 @@ import torch.nn as nn
 import numpy as np
 from mmpose.evaluation.functional import keypoint_pck_accuracy
 from easydict import EasyDict
-from .backbones import Backbones
 from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 import cv2
 import os.path as osp
@@ -189,9 +188,14 @@ class Poseidon(nn.Module):
         self.model = init_model(cfg.MODEL.CONFIG_FILE, cfg.MODEL.CHECKPOINT_FILE, device=device)
         self.backbone = self.model.backbone
 
+        if cfg.MODEL.EMBED_DIM == 384:
+            self.return_layers = {'layers.3': 'layer3', 'layers.7': 'layer7'} # VIT S, VIT B
+        elif cfg.MODEL.EMBED_DIM == 1280:
+            self.return_layers = {'layers.9': 'layer9', 'layers.21': 'layer21'}
+
         #self.return_layers = {'layers.7': 'layer7','layers.15':'layers15', 'layers.23': 'layers23'}
-        self.return_layers = {'layers.9': 'layer9', 'layer.21': 'layer21',}
-        #self.return_layers = {'layers.3': 'layer3', 'layers.7': 'layer7'}
+        #self.return_layers = {'layers.9': 'layer9', 'layer.21': 'layer21',} # VIT H
+        #self.return_layers = {'layers.3': 'layer3', 'layers.7': 'layer7'} # VIT S, VIT B
 
         self.extract_layers = ExtractIntermediateLayers(self.backbone, self.return_layers)
 
@@ -339,6 +343,4 @@ class Poseidon(nn.Module):
             norm_factor=np.ones((N, 2), dtype=np.float32))
 
         return avg_acc
-
-
 
