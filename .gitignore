@@ -74,7 +74,7 @@ configs/bestposetrack21/
 
 
 #mmpose
-mmpose/
+mmpose/**
 
 
 # out files
@@ -89,14 +89,33 @@ val_att_weights.py
 main.py
 
 #notebook folder
-notebook/
+# Ignore the entire notebook folder and its contents
+notebook/**
+
+# Ensure the folder itself is included so Git can look inside it
+!notebook/
+
+# Include specific files from the notebook folder
 !notebook/add_crown.py
 !notebook/separate_json.py
 
 HiEveDataset/
-models/models_tmp/
 
-/home/pace/Poseidon/models/model_tmp/
+# Ignore everything in the models folder and its subdirectories
+models/**
+
+# Allow the models folder itself so Git can check inside it
+!models/
+
+# Allow specific subdirectories and files within the models folder
+!models/best/
+!models/vitpose/
+!models/__init__.py
+!models/schema_model.png
+!models/schema_model.pdf
+
+
+/home/pace/Poseidon/models/model_tmp
 
 /home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
 /home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py

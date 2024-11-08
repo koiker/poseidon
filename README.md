@@ -40,6 +40,8 @@ Our approach achieves state-of-the-art performance on the PoseTrack21 and PoseTr
 | JM-Pose           | 85.8  | 88.1     | 85.7  | 82.5  | 84.1  | 83.1  | 78.5  | 84.0     |
 | **Poseidon (Ours)** | **92.2** | **90.8** | **88.3** | **85.8** | **85.5** | **87.7** | **85.7** | **88.3** |
 
+Evaluation is performed using the official PoseTrack evaluation code, poseval, which uses py-motmetrics internally.
+
 ## Environment
 * Python version:  3.11.6
 
