@@ -73,9 +73,6 @@ configs/bestposetrack18/
 configs/bestposetrack21/
 
 
-#mmpose
-mmpose/
-
 
 # out files
 *.out
