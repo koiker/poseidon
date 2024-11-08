@@ -74,7 +74,7 @@ configs/bestposetrack21/
 
 
 #mmpose
-mmpose/**
+mmpose/
 
 
 # out files
