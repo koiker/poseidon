@@ -90,6 +90,13 @@ main.py
 
 #notebook folder
 notebook/
+!notebook/add_crown.py
+!notebook/separate_json.py
 
 HiEveDataset/
 models/models_tmp/
+
+/home/pace/Poseidon/models/model_tmp/
+
+/home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
+/home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py

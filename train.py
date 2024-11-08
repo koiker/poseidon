@@ -19,7 +19,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../'))
 
 from datasets.transforms.build import reverse_transforms
-from models.best.Vitpose import Poseidon
+from models.best.Poseidon import Poseidon
 from datasets.zoo.posetrack.PoseTrack import PoseTrack 
 from posetimation import get_cfg, update_config 
 from engine.defaults import default_parse_args

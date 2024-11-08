@@ -8,7 +8,7 @@ import numpy as np
 import yaml
 from torch.utils.data import DataLoader
 from datasets.transforms.build import reverse_transforms
-from models.best.PoseidonHeatMapVitPoseAttention12_vith_dropout_best import Poseidon
+from models.best.Poseidon import Poseidon
 from datasets.zoo.posetrack.PoseTrack import PoseTrack
 from posetimation import get_cfg, update_config
 from engine.defaults import default_parse_args
@@ -18,7 +18,7 @@ from utils.utils_save_results import save_results
 from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 import wandb
 
-sys.path.insert(0, os.path.abspath('/home/pace/Poseidon/'))
+sys.path.insert(0, os.path.abspath('../'))
 
 def load_config(config_path):
     """ Load the YAML configuration file.
