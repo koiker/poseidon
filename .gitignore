@@ -112,10 +112,10 @@ models/**
 !models/schema_model.pdf
 
 
-/home/pace/Poseidon/models/model_tmp
+models/model_tmp
 
-/home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
-/home/pace/Poseidon/models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py
+models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
+models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py
 
-/home/pace/Poseidon/utils/utils_requests.py
-/home/pace/Poseidon/train_copy.py
+utils/utils_requests.py
+train_copy.py
