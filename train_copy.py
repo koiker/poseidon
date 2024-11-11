@@ -152,6 +152,7 @@ def main():
 
     # print start training
     print("\033[92m" + "Start training..." + "\033[0m")
+    # send_start_training()
     
     # print number of epochs, learning rate, optimizer and loss
     print("Number of epochs: ", cfg.TRAIN.END_EPOCH)
@@ -221,6 +222,18 @@ def main():
 
         # Save the results and configuration after each epoch
         if cfg.SAVE_RESULTS: 
+            save_results(cfg, results, experiment_dir)
+
+            # wandb log
+            wandb.log({
+                "train_loss": train_loss, 
+                "train_acc": train_acc, 
+                "val_loss": val_loss, 
+                "val_acc": val_acc, 
+                "mAP": perf_indicator,
+                "learning_rate": optimizer.param_groups[0]['lr']  # Log the current learning rate
+            })
+
             # Step the scheduler if applicable
             if cfg.TRAIN.LR_SCHEDULER == 'StepLR' or cfg.TRAIN.LR_SCHEDULER == 'CosineAnnealingLR':
                 save_model(model, optimizer, epoch, experiment_dir, scheduler, is_best=(perf_indicator > best_perf))
@@ -240,10 +253,13 @@ def main():
             print("\033[91m" + "Early stopping triggered." + "\033[0m")
             break
 
+    if cfg.SAVE_RESULTS:
+        send_training_complete( best_epoch, best_perf)
+
     print("Best performance: ", best_perf)
     print("Best epoch: ", best_epoch)
 
-
+#send_training_complete()
 print("\033[92m" + "Training complete." + "\033[0m")
 
 

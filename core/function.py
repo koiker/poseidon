@@ -156,7 +156,6 @@ def train(cfg, train_loader, model, criterion, optimizer, epoch, output_dir, dev
 
     total_time = time.time() - total_time
     print("\033[95m" + f"Total time: {total_time // 60:.0f} minutes and {total_time % 60:.2f} seconds" + "\033[0m\n")
-    #send_train_epoch_update(epoch, acc.avg, losses.avg)
 
     return losses.avg, acc.avg
 
@@ -251,10 +250,6 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir, epoc
     total_time = time.time() - end
     # print total time in minutes and seconds in purple color
     print("\033[95m" + f"Total time: {total_time // 60:.0f} minutes and {total_time % 60:.2f} seconds" + "\033[0m\n")
-
-    # every 5 epochs 
-    if epoch % 5 == 0:
-        send_validation_epoch_update(epoch, perf_indicator, losses.avg)
 
     return name_values, perf_indicator, losses.avg, acc.avg  # AP mean
 
