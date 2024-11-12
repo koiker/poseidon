@@ -98,27 +98,10 @@ notebook/**
 
 HiEveDataset/
 
-# Ignore everything in the models folder and its subdirectories
-models/**
-
-# Allow the models folder itself so Git can check inside it
-!models/
-
-# Allow specific subdirectories and files within the models folder
-!models/best/
-!models/vitpose/
-!models/__init__.py
-!models/schema_model.png
-!models/schema_model.pdf
-
-
-models/model_tmp
-
-models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
-models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py
-
 utils/utils_requests.py
 train_copy.py
 
 
 PROVA/
+
+models/model_tmp
