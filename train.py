@@ -29,7 +29,6 @@ from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 from core.function import train, validate, train_batch_accumulation
 from tqdm import tqdm
 from utils.utils_save_results import *
-from utils.utils_requests import *
 import wandb  
 import random
 import sys

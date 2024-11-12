@@ -52,17 +52,19 @@ Evaluation is performed using the official PoseTrack evaluation code, poseval, w
 
 ```
 conda create -n poseidon pyhton=3.11.6
+conda activate poseidon
 
 pip install -U openmim
 
 conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
 
-mim install mmengine
+mim install mmengine 
 mim  install "mmcv==2.1.0"
 mim  install "mmdet==3.2.0"
 mim  install "mmpose==1.3.1"
 mim  install "mmpretrain==1.2.0"
 
+cd poseidon
 conda env update --file environment.yml
 
 ```
@@ -74,20 +76,20 @@ for further details regarding the installation of MMPose refer to [**MMPose inst
 ### Sub-JHMDB Datset
 The directory stucture must be:
 ```
-dataJHMDB
-    -- annotations
-        -- split1
-            -- train
-            -- val
+dataJHMDB/
+    -- annotations/
+        -- split1/
+            -- train/
+            -- val/
         -- split2
         -- split3
-    -- images/Rename_Images
-    -- jsons
-        -- split1
+    -- images/Rename_Images/
+    -- jsons/
+        -- split1/
             -- val.json
             -- train.json
-        -- split2
-        -- split3
+        -- split2/
+        -- split3/
 ```
 The dataset can be downloaded from [**JHMDB Site**](http://jhmdb.is.tue.mpg.de) and the annotations from [**MMPose Source**](https://mmpose.readthedocs.io/en/latest/dataset_zoo/2d_body_keypoint.html) 
 
@@ -106,35 +108,36 @@ python separate_json.py --input_file dataJHMDB/jsons/split1/posetrack_val.json -
 
 The dataset can be downloaded from [**Posetrack download**](https://github.com/anDoer/PoseTrack21) and the structure of the dataset must be:
 ```
-dataPosetrack18
-    -- annotations
-        -- train
-        -- val
-    -- images
-        -- train
-        -- val
-    -- json
+dataPosetrack18/
+    -- annotations/
+        -- train/
+        -- val/
+    -- images/
+        -- train/
+        -- val/
+    -- json/
         -- posetrack_train.json
         -- posetrack_val.json
 ```
 
 
 ```
-dataPosetrack21
-    -- annotations
-        -- train
-        -- val
-    -- images
-        -- train
-        -- val
-    -- json
+dataPosetrack21/
+    -- annotations/
+        -- train/
+        -- val/
+    -- images/
+        -- train/
+        -- val/
+    -- json/
         -- posetrack_train.json
         -- posetrack_val.json
 ```
 
 ## Pretrained Weights for ViTPose
 
-The pretrained weights for ViTPose can be downloaded from the [MMPose Model Zoo](https://mmpose.readthedocs.io/en/latest/model_zoo/body_2d_keypoint.html).
+The pretrained weights for ViTPose can be downloaded from the [MMPose Model Zoo](https://mmpose.readthedocs.io/en/latest/model_zoo/body_2d_keypoint.html). Pretrained models must be placed in the models/vitpose/ folder.
+
 
 ## Usage
 For training and validation, refer to the config files present in the configs folder.

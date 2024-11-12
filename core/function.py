@@ -8,7 +8,6 @@ from torch.cuda.amp import GradScaler, autocast
 from utils.common import TRAIN_PHASE, VAL_PHASE, TEST_PHASE
 from datasets.process.heatmaps_process import get_final_preds, get_final_preds_coor
 from utils.utils_save_results import save_batch_examples
-from utils.utils_requests import *
 from .evaludate import accuracy, pck_accuracy
 
 def train_batch_accumulation(cfg, train_loader, model, criterion, optimizer, epoch, output_dir, device, experiment_dir, save_examples=False):

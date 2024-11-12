@@ -26,13 +26,6 @@ LOSS:
   
 MODEL: 
   METHOD: 'poseidon' # 'poseidon' or 'simplebaseline' or 'hrnet'
-  #CONFIG_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192.py'
-  #CHECKPOINT_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192-62d7a712_20230314.pth'
-  #CONFIG_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-huge_8xb64-210e_coco-256x192.py'
-  #CHECKPOINT_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-huge_8xb64-210e_coco-256x192-e32adcd4_20230314.pth'
-  #CHECKPOINT_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-huge_3rdparty_coco-256x192-5b738c8e_20230314.pth'
-  #CHECKPOINT_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-base_8xb64-210e_coco-256x192-216eae50_20230314.pth'
-  #CONFIG_FILE: '/home/pace/Poseidon/models/vitpose/td-hm_ViTPose-base_8xb64-210e_coco-256x192 copy.py'
   CHECKPOINT_FILE: './models/vitpose/td-hm_ViTPose-large_8xb64-210e_coco-256x192-53609f55_20230314.pth'
   CONFIG_FILE: './models/vitpose/td-hm_ViTPose-large_8xb64-210e_coco-256x192.py'
   FREEZE_HRNET_WEIGHTS: false

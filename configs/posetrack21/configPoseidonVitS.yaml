@@ -26,8 +26,8 @@ LOSS:
   
 MODEL: 
   METHOD: 'poseidon' # 'poseidon' or 'simplebaseline' or 'hrnet'
-  CONFIG_FILE: '/models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192.py'
-  CHECKPOINT_FILE: '/models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192-62d7a712_20230314.pth'
+  CONFIG_FILE: './models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192.py'
+  CHECKPOINT_FILE: './models/vitpose/td-hm_ViTPose-small_8xb64-210e_coco-256x192-62d7a712_20230314.pth'
   FREEZE_HRNET_WEIGHTS: false
   EVALUATE: true
   INIT_WEIGHTS: true
