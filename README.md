@@ -140,7 +140,7 @@ The pretrained weights for ViTPose can be downloaded from the [MMPose Model Zoo]
 
 
 ## Usage
-For training and validation, refer to the config files present in the configs folder.
+For training and validation, refer to the config files present in the configs folder. Remember to check all the paths in the config file.
 
 ### Training
 ```
