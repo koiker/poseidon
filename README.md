@@ -1,6 +1,6 @@
 # Poseidon: A ViT-based Architecture for Multi-frame Pose Estimation with Adaptive Frame Weighting and Multi-scale Feature Fusion
 
-This repository is the official implementation for **Poseidon: A ViT-based Architecture for Multi-frame Pose Estimation with Adaptive Frame Weighting and Multi-scale Feature Fusion**. 
+This repository is the official implementation for **Poseidon: A ViT-based Architecture for Multi-frame Pose Estimation with Adaptive Frame Weighting and Multi-scale Feature Fusion** by Cesare Davide Pace.
 
 [**Read the paper on arXiv**](https://arxiv.org/abs/xxxx.xxxxx)
 
