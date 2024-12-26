@@ -989,7 +989,7 @@ class PoseTrack(VideoDataset):
             c = 0
             used_frame_list = []
 
-            if self.dataset_name == 'PoseTrack':
+            if self.dataset_name == 'posetrack':
                 cur_length = L['images/' + vid]
             elif self.dataset_name == 'jhmdb':
                 cur_length = L['Rename_Images/' + vid]
@@ -1058,7 +1058,7 @@ class PoseTrack(VideoDataset):
         for vname in out_data:
             vdata = out_data[vname]
 
-            if self.dataset_name == "PoseTrack":
+            if self.dataset_name == "posetrack":
                 outfpath = osp.join(output_dir, out_filenames[osp.join('images', vname)])
             elif self.dataset_name == "jhmdb":
                 outfpath = osp.join(output_dir, out_filenames[osp.join('Rename_Images', vname)])
