@@ -2,6 +2,12 @@
 
 This repository is the official implementation for **Poseidon: A ViT-based Architecture for Multi-frame Pose Estimation with Adaptive Frame Weighting and Multi-scale Feature Fusion** by Cesare Davide Pace.
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/poseidon-a-vit-based-architecture-for-multi/multi-person-pose-estimation-on-posetrack2018)](https://paperswithcode.com/sota/multi-person-pose-estimation-on-posetrack2018?p=poseidon-a-vit-based-architecture-for-multi)
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/poseidon-a-vit-based-architecture-for-multi/multi-person-pose-estimation-on-posetrack21-1)](https://paperswithcode.com/sota/multi-person-pose-estimation-on-posetrack21-1?p=poseidon-a-vit-based-architecture-for-multi)
+
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/poseidon-a-vit-based-architecture-for-multi/2d-human-pose-estimation-on-jhmdb-2d-poses)](https://paperswithcode.com/sota/2d-human-pose-estimation-on-jhmdb-2d-poses?p=poseidon-a-vit-based-architecture-for-multi)
+
 [**Read the paper on arXiv**](https://arxiv.org/abs/xxxx.xxxxx)
 
 ## Abstract
