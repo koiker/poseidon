@@ -8,7 +8,7 @@ This repository is the official implementation for **Poseidon: A ViT-based Archi
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/poseidon-a-vit-based-architecture-for-multi/2d-human-pose-estimation-on-jhmdb-2d-poses)](https://paperswithcode.com/sota/2d-human-pose-estimation-on-jhmdb-2d-poses?p=poseidon-a-vit-based-architecture-for-multi)
 
-[**Read the paper on arXiv**](https://arxiv.org/abs/xxxx.xxxxx)
+[**Read the paper on arXiv**]([https://arxiv.org/abs/xxxx.xxxxx](https://arxiv.org/pdf/2501.08446))
 
 ## Abstract
 Human pose estimation, a vital task in computer vision, involves detecting and localizing human joints in images and videos. While single-frame pose estimation has seen significant progress, it often fails to capture the temporal dynamics for understanding complex, continuous movements. We propose **Poseidon**, a novel multi-frame pose estimation architecture that extends the ViTPose model by integrating temporal information for enhanced accuracy and robustness to address these limitations. Poseidon introduces key innovations: (1) an Adaptive Frame Weighting (AFW) mechanism that dynamically prioritizes frames based on their relevance, ensuring that the model focuses on the most informative data; (2) a Multi-Scale Feature Fusion (MSFF) module that aggregates features from different backbone layers to capture both fine-grained details and high-level semantics; and (3) a Cross-Attention module for effective information exchange between central and contextual frames, enhancing the model’s temporal coherence. The proposed architecture improves performance in complex video scenarios and offers scalability and computational efficiency suitable for real-world applications.
