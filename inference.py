@@ -1,226 +1,290 @@
-import torch
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Poseidon multi-frame inference 
+------------------------------
+"""
+import argparse
+import os
+import random
+
 import cv2
 import numpy as np
-from torchvision import transforms
-from models.PoseidonHeatMapVitPoseAttention12_vits_dropout_edit3 import Poseidon  
-from engine.defaults import default_parse_args
-from posetimation import get_cfg, update_config 
-
-from ultralytics import YOLO
+import torch
 import yaml
+from torchvision import transforms
+from ultralytics import YOLO
+import json
+from models.best.Poseidon import Poseidon
 
-# Indices of keypoints used in PoseTrack (excluding 'left_eye' and 'right_eye')
-used_keypoint_indices = [0,2,5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-used_keypoint_colors = [
-    (255, 0, 0),      # Crimson Red
-    (0, 255, 0),      # Lime Green
-    (0, 0, 255),      # Royal Blue
-    (255, 255, 0),    # Sunny Yellow
-    (0, 255, 255),    # Aqua Cyan
-    (255, 0, 255),    # Magenta Pink
-    (192, 192, 192),  # Silver Grey
-    (128, 0, 128),    # Plum Purple
-    (255, 165, 0),    # Tangerine Orange
-    (128, 128, 0),    # Olive Green
-    (0, 128, 128),    # Teal
-    (75, 0, 130),     # Indigo
-    (255, 105, 180),  # Hot Pink
-    (0, 191, 255),    # Deep Sky Blue
-    (255, 223, 0),    # Golden Yellow
-    (165, 42, 42),    # Chocolate Brown
-    (34, 139, 34)     # Forest Green
+# ─────────────────────── Utility ───────────────────────
+USED_KP_IDX = [0, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+USED_KP_COLORS = [
+    (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0),
+    (0, 255, 255), (255, 0, 255), (192, 192, 192), (128, 0, 128),
+    (255, 165, 0), (128, 128, 0), (0, 128, 128), (75, 0, 130),
+    (255, 105, 180), (0, 191, 255), (255, 223, 0), (165, 42, 42),
+    (34, 139, 34)
+]
+COCO_ORDER = [
+    0,  # nose  (missing → 0,0,0)
+    1,  # left_eye   ↓
+    2,  # right_eye  ↓      these three indices are *absent*
+    3,  # left_ear   ↓      from PoseTrack-minus-eyes so they
+    4,  # right_ear  ↓      will be padded.
+    5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16   # same as COCO
 ]
 
-def preprocess_frame(frame, cfg):
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    frame = cv2.resize(frame, tuple(cfg.MODEL.IMAGE_SIZE))
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = transform(frame)
-    return frame
-
-def run_inference(model, frames, device, cfg):
-    with torch.no_grad():
-        input_tensor = frames.to(device, non_blocking=True)
-        output = model(input_tensor)
-    return output  # Output is the heatmaps
-
-def load_model(cfg, checkpoint_path, device):
-    model = Poseidon(cfg, device=device)
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(device)  # Move the model to the device
-    model.eval()
-    return model
-
-def extract_keypoints_from_heatmaps(heatmaps, h_crop, w_crop, used_keypoint_indices):
-    # heatmaps: tensor of shape [batch_size, num_keypoints, h_heatmap, w_heatmap]
-    batch_size, num_keypoints, h_heatmap, w_heatmap = heatmaps.shape
-
-    # **Filter the keypoints**
-    heatmaps = heatmaps[:, used_keypoint_indices, :, :]
-    num_keypoints = len(used_keypoint_indices)
-    
-    scale_x = w_crop / w_heatmap
-    scale_y = h_crop / h_heatmap
-
-    # Flatten the heatmaps
-    heatmaps = heatmaps.view(batch_size, num_keypoints, -1)
-
-    maxvals, idx = torch.max(heatmaps, dim=2)
-    idx_x = idx % w_heatmap
-    idx_y = idx // w_heatmap
-
-    # Scale to cropped frame size
-    keypoints_x = idx_x * scale_x
-    keypoints_y = idx_y * scale_y
-
-    keypoints = torch.stack((keypoints_x, keypoints_y), dim=2)  # shape: [batch_size, num_keypoints, 2]
-
-    return keypoints
-
-def process_video(video_path, model, detector, device, cfg, window_size=5, step_frame=1):
-    cap = cv2.VideoCapture(video_path)
-    frame_buffer = []
-    results = []
-
-    # Initialize video writer
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    out = cv2.VideoWriter('output_video.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
-
-    total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    print("Number of frames: ", total_frames)
-
-    i = 0
-    
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame_buffer.append(frame)
-
-        print("Frame: {}/{}".format(i, total_frames))
-        i += 1
-        
-        if len(frame_buffer) == window_size * step_frame:
-            # Select frames from buffer based on step_frame
-            sampled_frames = frame_buffer[::step_frame]
-
-            # Determine the index of the central frame
-            central_frame_index = len(sampled_frames) // 2
-            central_frame = sampled_frames[central_frame_index]
-            
-            # Run detector on the central frame
-            detections = detector.predict(central_frame, verbose=False)
-            
-            detection = detections[0]
-            
-            # Extract bounding boxes
-            boxes = detection.boxes  # Boxes object
-            
-            for box in boxes:
-                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-                
-                # Enlarge bbox by 25%
-                w = x2 - x1
-                h = y2 - y1
-                x_center = x1 + w / 2
-                y_center = y1 + h / 2
-                w *= 1.25
-                h *= 1.25
-                x1 = x_center - w / 2
-                y1 = y_center - h / 2
-                x2 = x_center + w / 2
-                y2 = y_center + h / 2
-                
-                # Ensure coordinates are within image boundaries
-                x1_crop = int(max(x1, 0))
-                y1_crop = int(max(y1, 0))
-                x2_crop = int(min(x2, central_frame.shape[1]))
-                y2_crop = int(min(y2, central_frame.shape[0]))
-                
-                h_crop = y2_crop - y1_crop
-                w_crop = x2_crop - x1_crop
-
-                # Apply the same bbox to all sampled frames
-                cropped_frames = []
-                for frame in sampled_frames:
-                    cropped_frame = frame[y1_crop:y2_crop, x1_crop:x2_crop]
-                    processed_frame = preprocess_frame(cropped_frame, cfg)
-                    cropped_frames.append(processed_frame)
-                
-                # Stack the sampled frames
-                cropped_frames = torch.stack(cropped_frames, dim=0)
-                cropped_frames = cropped_frames.unsqueeze(0)
-
-                # Run inference on the preprocessed frames
-                output = run_inference(model, cropped_frames, device, cfg)
-
-                # Extract keypoints
-                keypoints = extract_keypoints_from_heatmaps(output, h_crop, w_crop, used_keypoint_indices)
-
-                keypoints = keypoints[0]  # shape: [num_keypoints, 2]
-
-                # Map keypoints to original image coordinate space
-                keypoints[:, 0] += x1_crop
-                keypoints[:, 1] += y1_crop
-
-                # Convert keypoints to numpy
-                keypoints = keypoints.cpu().numpy()
-
-                # Draw keypoints on central_frame
-                for j, (x, y) in enumerate(keypoints):
-                    # set color based on keypoint index
-                    color = used_keypoint_colors[used_keypoint_indices[j]]
-                    cv2.circle(central_frame, (int(x), int(y)), 3, color, -1)
-            
-            # Write central_frame to video
-            out.write(central_frame)
-            
-            # Remove the first `step_frame` frames from the buffer
-            frame_buffer = frame_buffer[step_frame:]
-    
-    cap.release()
-    out.release()
-    return results
-
-# Load your configuration
-def load_config(config_path):
-    """ Load the YAML configuration file.
-
-    Args:
-        config_path (str): Path to the YAML configuration file.
-
-    Returns:
-        dict: Configuration dictionary.
+def to_coco(keypoints14: np.ndarray, conf: float = 2.0) -> list[int]:
     """
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-    return config
+    Map the 14 predicted (x,y) pairs to a 17-*3* COCO list.
+    The three missing keypoints are zero-filled.
+    Visibility is always `conf` (2 = "visible") for predicted points.
+    """
+    coco = [0]*17*3
+    # indices 5–16 in COCO are exactly your USED_KP_IDX[1:]
+    available = {
+        5:0, 6:1, 7:2, 8:3, 9:4, 10:5, 11:6, 12:7,
+        13:8, 14:9, 15:10, 16:11
+    }
+    for coco_id, src_pos in available.items():
+        x, y = keypoints14[src_pos]
+        off = coco_id*3
+        coco[off:off+3] = [float(x), float(y), conf]
+    return coco
 
-def setup(args):
-    cfg = get_cfg(args)
-    update_config(cfg, args)
+def set_seed(seed: int = 42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+def parse_args():
+    p = argparse.ArgumentParser("Poseidon multi-frame inference")
+    p.add_argument("-c", "--config", required=True, help="path to YAML config")
+    p.add_argument("-w", "--weights", required=True, help=".pt checkpoint")
+    p.add_argument("-i", "--video_in", required=True, help="input video path")
+    p.add_argument("-o", "--video_out", default="output.mp4",
+                   help="where to write annotated video")
+    p.add_argument("-n", "--window", type=int, default=5,
+                   help="number of frames per inference window")
+    p.add_argument("-s", "--step", type=int, default=1,
+                   help="frame stride between samples")
+    p.add_argument("--coco_json", default="sample/predictions.json",
+               help="file to store COCO-format results")
+    p.add_argument("-g", "--gpu", type=int, default=0, help="CUDA device index")
+    return p.parse_args()
+
+
+# ─────────────────────── Config ───────────────────────
+def load_cfg(path: str):
+    data = yaml.safe_load(open(path, "r"))
+
+    class C:
+        pass
+    cfg = C()
+    cfg.SEED = data.get("SEED", 42)
+
+    cfg.MODEL = C()
+    cfg.MODEL.METHOD = data["MODEL"]["METHOD"]
+    cfg.MODEL.NUM_JOINTS = data["MODEL"]["NUM_JOINTS"]
+    cfg.MODEL.IMAGE_SIZE = tuple(data["MODEL"]["IMAGE_SIZE"])
+    cfg.MODEL.CONFIG_FILE = data["MODEL"].get("CONFIG_FILE")
+    cfg.MODEL.CHECKPOINT_FILE = data["MODEL"].get("CHECKPOINT_FILE")
+    cfg.MODEL.EMBED_DIM = data["MODEL"].get("EMBED_DIM", 256)
+    cfg.WINDOWS_SIZE = data["MODEL"].get("WINDOWS_SIZE", 5)
+    cfg.MODEL.HEATMAP_SIZE = data["MODEL"].get("HEATMAP_SIZE", (96, 72))
+
+    cfg.DATASET = C()
+    cfg.DATASET.BBOX_ENLARGE_FACTOR = data["DATASET"].get(
+        "BBOX_ENLARGE_FACTOR", 1.25)
     return cfg
 
-args = default_parse_args()
-cfg = setup(args)
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-model_path = "/home/pace/Poseidon/results/2024-09-10/best_model.pt"
+# ─────────────────────── Video IO ───────────────────────
+def make_writer(path: str, fps: float, size: tuple[int, int], is_color=True):
+    """Return a cv2.VideoWriter whose codec matches the container."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext in {".mp4", ".m4v"}:
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")   # very safe
+    elif ext in {".avi"}:
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+    elif ext in {".mov"}:
+        fourcc = cv2.VideoWriter_fourcc(*"avc1")
+    else:
+        raise ValueError(f"Unsupported video container: “{ext}”")
 
-# Load the model
-model = load_model(cfg, model_path, device)
+    writer = cv2.VideoWriter(path, fourcc, fps, size, is_color)
+    if not writer.isOpened():
+        raise RuntimeError(
+            f"Could not open VideoWriter for {path!r}. "
+            "Your OpenCV build may lack the requested codec."
+        )
+    return writer
 
-# define detector
-detector = YOLO('./models/yolo/yolov8s-pose.pt')
 
-# Run inference and visualization on the video
-video_path = '/home/pace/Poseidon/sample/sample.mp4'
+def preprocess_frame(frame, size):
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.resize(frame, size)
+    tfm = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
+    return tfm(frame)
 
-results = process_video(video_path, model, detector, device, cfg, window_size=cfg.WINDOWS_SIZE)
+
+def extract_kps(heatmaps, h_crop, w_crop):
+    _, _, H, W = heatmaps.shape
+    hm = heatmaps[0, USED_KP_IDX].view(len(USED_KP_IDX), -1)
+    maxv, idx = hm.max(dim=1)
+    ys = (idx // W).float() * (h_crop / H)
+    xs = (idx % W).float() * (w_crop / W)
+    return torch.stack([xs, ys], dim=1).cpu().numpy()
+
+
+# ─────────────────────── Main loop ───────────────────────
+def process_video(model, detector, device, cfg, args):
+    cap = cv2.VideoCapture(args.video_in)
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open input video {args.video_in!r}")
+
+    try:
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        W_img = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H_img = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if W_img == 0 or H_img == 0:
+            raise RuntimeError("Failed to read frame dimensions from input video")
+
+        out = make_writer(args.video_out, fps, (W_img, H_img))
+
+        annotations = []       
+        image_id = 0
+        ann_id   = 0
+        buf: list[np.ndarray] = []
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            buf.append(frame)
+
+            if len(buf) < args.window * args.step:
+                continue
+
+            sampled = buf[::args.step]
+            center = sampled[len(sampled) // 2].copy()
+
+            # ── Human detection on the centre frame ──
+            dets = detector.predict(center, verbose=False)[0]
+            for box in dets.boxes:
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+                w = (x2 - x1) * cfg.DATASET.BBOX_ENLARGE_FACTOR
+                h = (y2 - y1) * cfg.DATASET.BBOX_ENLARGE_FACTOR
+
+                x1c, y1c = int(max(cx - w / 2, 0)), int(max(cy - h / 2, 0))
+                x2c, y2c = int(min(cx + w / 2, W_img)), int(min(cy + h / 2, H_img))
+                w_crop, h_crop = x2c - x1c, y2c - y1c
+
+                crops = [
+                    preprocess_frame(f[y1c:y2c, x1c:x2c], cfg.MODEL.IMAGE_SIZE)
+                    for f in sampled
+                ]
+                inp = torch.stack(crops).unsqueeze(0).to(device)
+
+                with torch.no_grad():
+                    hm = model(inp)
+                    
+                kps = extract_kps(hm, h_crop, w_crop)
+
+                for i, (px, py) in enumerate(kps):
+                    color = USED_KP_COLORS[i]
+                    cv2.circle(center, (int(px) + x1c, int(py) + y1c), 2, color, -1)
+                
+                # update json annotations
+                coco_keypoints = to_coco(kps)
+                # bbox = [x1, y1, width, height] as required by COCO
+                bbox = [float(x1c), float(y1c), float(w_crop), float(h_crop)]
+
+                annotations.append({
+                    "id": ann_id,
+                    "image_id": image_id,
+                    "category_id": 1,           # person
+                    "keypoints": coco_keypoints,
+                    "num_keypoints": 14,
+                    "bbox": bbox,
+                    "area": float(w_crop*h_crop),
+                    "iscrowd": 0
+                })
+                ann_id += 1
+
+            # ── ensure frame size is still what we promised ──
+            assert center.shape[0] == H_img and center.shape[1] == W_img
+
+            out.write(center)
+            image_id += 1
+            buf = buf[args.step:]
+
+        coco_dict = {
+            "info": {"description": "Poseidon predictions"},
+            "images": [
+                {"id": i, "file_name": f"frame_{i:06d}.jpg"}
+                for i in range(image_id)
+            ],
+            "annotations": annotations,
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "person",
+                    "keypoints": [
+                        "nose","left_eye","right_eye","left_ear","right_ear",
+                        "left_shoulder","right_shoulder","left_elbow","right_elbow",
+                        "left_wrist","right_wrist","left_hip","right_hip",
+                        "left_knee","right_knee","left_ankle","right_ankle"
+                    ],
+                    "skeleton": []   # fill if you need it
+                }
+            ]
+        }
+        with open(args.coco_json, "w") as f:
+            json.dump(coco_dict, f, indent=4)
+        print(f"✔ COCO file saved to {args.coco_json}")
+        
+    finally:
+        cap.release()
+        if 'out' in locals():
+            out.release()
+        cv2.destroyAllWindows()
+
+    print(f"✔ Finished writing annotated video to “{args.video_out}”")
+    
+# ─────────────────────── Entrypoint ───────────────────────
+def main():
+    args = parse_args()
+    cfg = load_cfg(args.config)
+    set_seed(cfg.SEED)
+    
+    # based on the args output create the output directory
+    os.makedirs(os.path.dirname(args.video_out), exist_ok=True)
+    os.makedirs(os.path.dirname(args.coco_json), exist_ok=True)
+
+
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+    print("→ Using device:", device)
+
+    model = Poseidon(cfg, phase="test", device=device, inference=True)
+    ckpt = torch.load(args.weights, map_location=device)
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.to(device).eval()
+
+    detector = YOLO("yolov8s-pose.pt")  # or your own weights
+    process_video(model, detector, device, cfg, args)
+    print("✓ Done!")
+    
+    
+if __name__ == "__main__":
+    main()
