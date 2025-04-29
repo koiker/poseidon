@@ -157,7 +157,48 @@ python train.py --config /path/to/config/config.yaml
 python val.py --config /path/to/config/config.yaml --weights_path /path/to/weights.pt
 ```
 
+### Inference  🚀 *(early-stage — contributions welcome!)*
+
+This is **the very first release** of Poseidon’s inference pipeline; we expect to refine and optimise it over time, so **feel free to open issues or pull-requests with improvements**.
+
+#### Quick start
+
+1. **Install YOLO’s runtime.**  
+   We rely on the Ultralytics implementation; grab it with:
+
+   ```bash
+   pip install ultralytics           # YOLO v8.x
+    ```
+
+2. **Download the pre-trained Poseidon weights**:  [**Link**]([https://arxiv.org/pdf/2501.08446](https://drive.google.com/drive/folders/1i7UwEF45bnwTMO8bwD3UForeb45-bEaX?usp=sharing))
+
+3. **Run inference** — the script automatically performs *person detection* with **YOLO v8-s** (this version is hard-coded in the script, but you can swap in other YOLO models if you wish):
+
+   ```bash
+   python inference.py \
+          -c configs/posetrack21/vith_test.yaml \
+          -w models/poseidon_vith.pt \
+          -i input/sample_video.mp4 \
+          -o output/sample_annotated.mp4 \
+          -- window 5 \
+          -- step 1 \
+          --coco_json results/sample_keypoints.json
+          -- gpu 0
+    ```
 ## Citations
+
+```
+@misc{pace2025poseidonvitbasedarchitecturemultiframe,
+      title={Poseidon: A ViT-based Architecture for Multi-Frame Pose Estimation with Adaptive Frame Weighting and Multi-Scale Feature Fusion}, 
+      author={Cesare Davide Pace and Alessandro Marco De Nunzio and Claudio De Stefano and Francesco Fontanella and Mario Molinara},
+      year={2025},
+      eprint={2501.08446},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2501.08446}, 
+}
+```
+
 
 ## Acknowledgment
 Our codes are mainly based on [**DCPOSE**](https://github.com/Pose-Group/DCPose) and [**MMPose**](https://mmpose.readthedocs.io/en/latest/). Thanks to the authors!
