@@ -182,7 +182,7 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
           -o output/sample_annotated.mp4 \
           -- window 5 \
           -- step 1 \
-          --coco_json results/sample_keypoints.json
+          --coco_json results/sample_keypoints.json \
           -- gpu 0
     ```
 ## Citations
