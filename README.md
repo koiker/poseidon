@@ -180,10 +180,10 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
           -w models/poseidon_vith.pt \
           -i input/sample_video.mp4 \
           -o output/sample_annotated.mp4 \
-          -- window 5 \
-          -- step 1 \
+          --window 5 \
+          --step 1 \
           --coco_json results/sample_keypoints.json \
-          -- gpu 0
+          --gpu 0
     ```
 ## Citations
 
