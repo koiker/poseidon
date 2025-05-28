@@ -275,8 +275,8 @@ def main():
 
     if torch.backends.mps.is_available():
         device = "mps"
-    elif torch.cuda.is_available():
-        device = "cuda:0"
+    elif torch.cuda.is_available() and args.gpu >= 0:
+        device = f"cuda:{args.gpu}"
     else:
         device = "cpu"
 
