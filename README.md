@@ -11,8 +11,9 @@ This repository is the official implementation for **Poseidon: A ViT-based Archi
 [**Read the paper on arXiv**](https://arxiv.org/pdf/2501.08446)
 
 ## Abstract
+
 Human pose estimation, a vital task in computer vision, involves detecting and localizing human joints in images and videos. While single-frame pose estimation has seen significant progress, it often fails to capture the temporal dynamics for understanding complex, continuous movements. We propose **Poseidon**, a novel multi-frame pose estimation architecture that extends the ViTPose model by integrating temporal information for enhanced accuracy and robustness to address these limitations. Poseidon introduces key innovations: (1) an Adaptive Frame Weighting (AFW) mechanism that dynamically prioritizes frames based on their relevance, ensuring that the model focuses on the most informative data; (2) a Multi-Scale Feature Fusion (MSFF) module that aggregates features from different backbone layers to capture both fine-grained details and high-level semantics; and (3) a Cross-Attention module for effective information exchange between central and contextual frames, enhancing the model’s temporal coherence. The proposed architecture improves performance in complex video scenarios and offers scalability and computational efficiency suitable for real-world applications.
-Our approach achieves state-of-the-art performance on the PoseTrack21 and PoseTrack18 datasets, achieving mAP scores of 88.3 and 87.8, respectively, outperforming existing methods. 
+Our approach achieves state-of-the-art performance on the PoseTrack21 and PoseTrack18 datasets, achieving mAP scores of 88.3 and 87.8, respectively, outperforming existing methods.
 
 ![Description of the image](./models/schema_model.png)
 
@@ -49,14 +50,14 @@ Our approach achieves state-of-the-art performance on the PoseTrack21 and PoseTr
 Evaluation is performed using the official PoseTrack evaluation code, poseval, which uses py-motmetrics internally.
 
 ## Environment
+
 * Python version:  3.11.6
 
 * PyTorch version:  2.0.1
 
 * Cuda version: 12.0
 
-
-```
+```bash
 conda create -n poseidon pyhton=3.11.6
 conda activate poseidon
 
@@ -80,8 +81,10 @@ for further details regarding the installation of MMPose refer to [**MMPose inst
 ## Data preparation
 
 ### Sub-JHMDB Datset
+
 The directory stucture must be:
-```
+
+```text
 dataJHMDB/
     -- annotations/
         -- split1/
@@ -97,22 +100,26 @@ dataJHMDB/
         -- split2/
         -- split3/
 ```
-The dataset can be downloaded from [**JHMDB Site**](http://jhmdb.is.tue.mpg.de) and the annotations from [**MMPose Source**](https://mmpose.readthedocs.io/en/latest/dataset_zoo/2d_body_keypoint.html) 
+
+The dataset can be downloaded from [**JHMDB Site**](http://jhmdb.is.tue.mpg.de) and the annotations from [**MMPose Source**](https://mmpose.readthedocs.io/en/latest/dataset_zoo/2d_body_keypoint.html)
 
 Once the annotations have been downloaded, use add_crown.py for each annotations file to adapt the format to coco format and rename it with "posetrack_train.json" or "posetrack_val.json".
-```
+
+```bash
 python notebook/add_crown.py --file_path dataJHMDB/jsons/split1/Sub1_train.json
 # remember to rename the file
 ```
+
 After this, use separeta_json.py to generate json files for each frame.
-```
+
+```bash
 python separate_json.py --input_file dataJHMDB/jsons/split1/posetrack_val.json --output_folder dataJHMDB/annotations/split1/val
 ```
-
 
 ### Posetrack18 and Posetrack21
 
 The dataset can be downloaded from [**Posetrack download**](https://github.com/anDoer/PoseTrack21) and the structure of the dataset must be:
+
 ```
 dataPosetrack18/
     -- annotations/
@@ -125,7 +132,6 @@ dataPosetrack18/
         -- posetrack_train.json
         -- posetrack_val.json
 ```
-
 
 ```
 dataPosetrack21/
@@ -144,16 +150,19 @@ dataPosetrack21/
 
 The pretrained weights for ViTPose can be downloaded from the [MMPose Model Zoo](https://mmpose.readthedocs.io/en/latest/model_zoo/body_2d_keypoint.html). Pretrained models must be placed in the models/vitpose/ folder.
 
-
 ## Usage
+
 For training and validation, refer to the config files present in the configs folder. Remember to check all the paths in the config file.
 
 ### Training
+
+```bash
+python train.py --config /path/to/config/config.yaml
 ```
-python train.py --config /path/to/config/config.yaml 
-```
+
 ### Validation
-```
+
+```bash
 python val.py --config /path/to/config/config.yaml --weights_path /path/to/weights.pt
 ```
 
@@ -163,6 +172,48 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
 
 #### Quick start
 
+You must setup the environment similarly for training and validation.
+
+#### Using Conda
+
+```bash
+conda create -n poseidon pyhton=3.11.6
+conda activate poseidon
+
+pip install -U openmim
+
+conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
+
+cd poseidon
+conda env update --file environment.yml
+```
+
+### Using Pip
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+
+pip install -U openmim
+pip install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
+pip install torch torchvision torchaudio
+pip install ultralytics
+pip install opencv-python pyyaml numpy
+python -m ensurepip --upgrade
+python -m pip install --upgrade setuptools
+```
+
+### MIM for PyTorch 2.0.1 and torchvision==0.15.2
+
+```bash
+mim install mmengine
+mim install "mmcv==2.1.0"
+mim install "mmdet==3.2.0"
+mim install "mmpose==1.3.1"
+mim install "mmpretrain==1.2.0"
+```
+
 1. **Install YOLO’s runtime.**  
    We rely on the Ultralytics implementation; grab it with:
 
@@ -170,9 +221,15 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
    pip install ultralytics           # YOLO v8.x
     ```
 
-2. **Download the pre-trained Poseidon weights**:  [**Link**]([https://arxiv.org/pdf/2501.08446](https://drive.google.com/drive/folders/1i7UwEF45bnwTMO8bwD3UForeb45-bEaX?usp=sharing))
+2. **Download the VitPose model.**  
+   We rely on the ViTPose implementation; grab it with:
+   `mim download mmpose --config td-hm_ViTPose-huge_8xb64-210e_coco-256x192 --dest ./models/vitpose`
+    The destination folder should be models/vitpose
 
-3. **Run inference** — the script automatically performs *person detection* with **YOLO v8-s** (this version is hard-coded in the script, but you can swap in other YOLO models if you wish):
+3. **Download the pre-trained Poseidon weights**:  [**Link**]([https://arxiv.org/pdf/2501.08446](https://drive.google.com/drive/folders/1i7UwEF45bnwTMO8bwD3UForeb45-bEaX?usp=sharing))
+This google drive link is for the weights of the ViTPose model. Download all three models in the folder: `models/vitpose`
+
+4. **Run inference** — the script automatically performs *person detection* with **YOLO v8-s** (this version is hard-coded in the script, but you can swap in other YOLO models if you wish):
 
    ```bash
    python inference.py \
@@ -185,6 +242,7 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
           --coco_json results/sample_keypoints.json \
           --gpu 0
     ```
+
 ## Citations
 
 ```
@@ -199,6 +257,6 @@ This is **the very first release** of Poseidon’s inference pipeline; we expect
 }
 ```
 
-
 ## Acknowledgment
+
 Our codes are mainly based on [**DCPOSE**](https://github.com/Pose-Group/DCPose) and [**MMPose**](https://mmpose.readthedocs.io/en/latest/). Thanks to the authors!
