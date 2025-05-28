@@ -98,6 +98,7 @@ def load_cfg(path: str):
     cfg.MODEL.EMBED_DIM = data["MODEL"].get("EMBED_DIM", 256)
     cfg.WINDOWS_SIZE = data["MODEL"].get("WINDOWS_SIZE", 5)
     cfg.MODEL.HEATMAP_SIZE = data["MODEL"].get("HEATMAP_SIZE", (96, 72))
+    cfg.MODEL.FREEZE_WEIGHTS = data["MODEL"].get("FREEZE_WEIGHTS", False)
 
     cfg.DATASET = C()
     cfg.DATASET.BBOX_ENLARGE_FACTOR = data["DATASET"].get(
@@ -272,11 +273,17 @@ def main():
     os.makedirs(os.path.dirname(args.video_out), exist_ok=True)
     os.makedirs(os.path.dirname(args.coco_json), exist_ok=True)
 
+    if torch.backends.mps.is_available():
+        device = "mps"
+    elif torch.cuda.is_available():
+        device = "cuda:0"
+    else:
+        device = "cpu"
 
-    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+    # device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print("→ Using device:", device)
 
-    model = Poseidon(cfg, phase="test", device=device, inference=True)
+    model = Poseidon(cfg, phase="test", device=device)
     ckpt = torch.load(args.weights, map_location=device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device).eval()
