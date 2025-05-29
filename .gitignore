@@ -66,6 +66,7 @@ dataJHMDB/
 dataPosetrack18/
 dataPosetrack21/
 data/
+input/
 
 #config
 configs/bestJHMDB/
@@ -77,6 +78,7 @@ configs/bestposetrack21/
 # out files
 *.out
 *.txt
+output/
 
 # ghost file
 ghost.py
@@ -107,3 +109,4 @@ PROVA/
 models/model_tmp
 models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_adaptive.py
 models/best/PoseidonHeatMapVitPoseAttention12_vith_dropout_best_no_multi_fusion.py
+.DS_Store
