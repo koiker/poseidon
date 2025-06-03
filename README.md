@@ -226,7 +226,7 @@ mim install "mmpretrain==1.2.0"
    `mim download mmpose --config td-hm_ViTPose-huge_8xb64-210e_coco-256x192 --dest ./models/vitpose`
     The destination folder should be models/vitpose
 
-3. **Download the pre-trained Poseidon weights**:  [**Link**]([https://drive.google.com/drive/folders/1i7UwEF45bnwTMO8bwD3UForeb45-bEaX?usp=sharing])
+3. **Download the pre-trained Poseidon weights**:  [**Link**](https://drive.google.com/drive/folders/1i7UwEF45bnwTMO8bwD3UForeb45-bEaX?usp=sharing)
 This google drive link is for the weights of the ViTPose model. Download all three models in the folder: `models/vitpose`
 
 4. **Run inference** — the script automatically performs *person detection* with **YOLO v8-s** (this version is hard-coded in the script, but you can swap in other YOLO models if you wish):
