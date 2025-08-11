@@ -151,6 +151,9 @@ def make_writer(path: str, fps: float, size: tuple[int, int], is_color=True):
 def preprocess_frame(frame, size):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = cv2.resize(frame, size)
+    # These are the mean and std deviation of the ImageNet dataset.
+    # It's a common practice to normalize images with these values when using
+    # models pretrained on ImageNet.
     tfm = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -183,7 +186,7 @@ def process_video(model, detector, device, cfg, args):
 
         out = make_writer(args.video_out, fps, (W_img, H_img))
 
-        annotations = []       
+        annotations = []
         image_id = 0
         ann_id   = 0
         buf: list[np.ndarray] = []
@@ -219,7 +222,7 @@ def process_video(model, detector, device, cfg, args):
 
                 with torch.no_grad():
                     hm = model(inp)
-                    
+
                 kps = extract_kps(hm, h_crop, w_crop)
 
                 # Create a mapping from keypoint names to their coordinates
@@ -320,7 +323,6 @@ def main():
     else:
         device = "cpu"
 
-    # device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print("→ Using device:", device)
 
     model = Poseidon(cfg, phase="test", device=device)
