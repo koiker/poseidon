@@ -16,9 +16,29 @@ from torchvision import transforms
 from ultralytics import YOLO
 import json
 from models.best.Poseidon import Poseidon
+from datasets.zoo.posetrack.pose_skeleton import (
+    PoseTrack_Official_Keypoint_Ordering,
+    PoseTrack_Keypoint_Pairs,
+)
 
 
 # ─────────────────────── Utility ───────────────────────
+MAPPED_KP_NAMES = [
+    'nose',
+    'right_eye',
+    'left_shoulder',
+    'right_shoulder',
+    'left_elbow',
+    'right_elbow',
+    'left_wrist',
+    'right_wrist',
+    'left_hip',
+    'right_hip',
+    'left_knee',
+    'right_knee',
+    'left_ankle',
+    'right_ankle'
+]
 USED_KP_IDX = [0, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 USED_KP_COLORS = [
     (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0),
@@ -131,6 +151,9 @@ def make_writer(path: str, fps: float, size: tuple[int, int], is_color=True):
 def preprocess_frame(frame, size):
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = cv2.resize(frame, size)
+    # These are the mean and std deviation of the ImageNet dataset.
+    # It's a common practice to normalize images with these values when using
+    # models pretrained on ImageNet.
     tfm = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -163,7 +186,7 @@ def process_video(model, detector, device, cfg, args):
 
         out = make_writer(args.video_out, fps, (W_img, H_img))
 
-        annotations = []       
+        annotations = []
         image_id = 0
         ann_id   = 0
         buf: list[np.ndarray] = []
@@ -199,12 +222,28 @@ def process_video(model, detector, device, cfg, args):
 
                 with torch.no_grad():
                     hm = model(inp)
-                    
+
                 kps = extract_kps(hm, h_crop, w_crop)
 
+                # Create a mapping from keypoint names to their coordinates
+                kp_map = {
+                    name: (int(kps[i][0]) + x1c, int(kps[i][1]) + y1c)
+                    for i, name in enumerate(MAPPED_KP_NAMES)
+                }
+                if 'nose' in kp_map:
+                    kp_map['head_bottom'] = kp_map['nose']
+
+                # Draw circles for each keypoint
                 for i, (px, py) in enumerate(kps):
                     color = USED_KP_COLORS[i]
                     cv2.circle(center, (int(px) + x1c, int(py) + y1c), 2, color, -1)
+
+                # Draw lines to connect the keypoints
+                for kp1_name, kp2_name, _ in PoseTrack_Keypoint_Pairs:
+                    if kp1_name in kp_map and kp2_name in kp_map:
+                        pt1 = kp_map[kp1_name]
+                        pt2 = kp_map[kp2_name]
+                        cv2.line(center, pt1, pt2, (0, 255, 0), 1)
                 
                 # update json annotations
                 coco_keypoints = to_coco(kps)
@@ -247,7 +286,11 @@ def process_video(model, detector, device, cfg, args):
                         "left_wrist","right_wrist","left_hip","right_hip",
                         "left_knee","right_knee","left_ankle","right_ankle"
                     ],
-                    "skeleton": []   # fill if you need it
+                    "skeleton": [
+                        [16, 14], [14, 12], [17, 15], [15, 13], [12, 13],
+                        [6, 8], [8, 10], [7, 9], [9, 11], [6, 7], [6, 12],
+                        [7, 13], [12, 13]
+                    ]
                 }
             ]
         }
@@ -280,7 +323,6 @@ def main():
     else:
         device = "cpu"
 
-    # device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print("→ Using device:", device)
 
     model = Poseidon(cfg, phase="test", device=device)
