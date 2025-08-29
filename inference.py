@@ -101,15 +101,23 @@ def parse_args():
 
 
 # ─────────────────────── Config ───────────────────────
+class Config:
+    """Configuration class that allows dynamic attribute assignment."""
+    def __setattr__(self, name, value):
+        self.__dict__[name] = value
+    
+    def __getattr__(self, name):
+        if name in self.__dict__:
+            return self.__dict__[name]
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
 def load_cfg(path: str):
     data = yaml.safe_load(open(path, "r"))
 
-    class C:
-        pass
-    cfg = C()
+    cfg = Config()
     cfg.SEED = data.get("SEED", 42)
 
-    cfg.MODEL = C()
+    cfg.MODEL = Config()
     cfg.MODEL.METHOD = data["MODEL"]["METHOD"]
     cfg.MODEL.NUM_JOINTS = data["MODEL"]["NUM_JOINTS"]
     cfg.MODEL.IMAGE_SIZE = tuple(data["MODEL"]["IMAGE_SIZE"])
@@ -120,7 +128,7 @@ def load_cfg(path: str):
     cfg.MODEL.HEATMAP_SIZE = data["MODEL"].get("HEATMAP_SIZE", (96, 72))
     cfg.MODEL.FREEZE_WEIGHTS = data["MODEL"].get("FREEZE_WEIGHTS", False)
 
-    cfg.DATASET = C()
+    cfg.DATASET = Config()
     cfg.DATASET.BBOX_ENLARGE_FACTOR = data["DATASET"].get(
         "BBOX_ENLARGE_FACTOR", 1.25)
     return cfg
@@ -177,6 +185,7 @@ def process_video(model, detector, device, cfg, args):
     if not cap.isOpened():
         raise RuntimeError(f"Could not open input video {args.video_in!r}")
 
+    out = None
     try:
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         W_img = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -300,7 +309,7 @@ def process_video(model, detector, device, cfg, args):
         
     finally:
         cap.release()
-        if 'out' in locals():
+        if out is not None:
             out.release()
         cv2.destroyAllWindows()
 
